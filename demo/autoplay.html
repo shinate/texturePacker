@@ -1,0 +1,89 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>[SC]Auto play</title>
+		<script type="text/javascript" src="/resource/inc.js?|lib/_.js,style/global.css"></script>
+		<script type="text/javascript" src="/resource/lib/jquery/jquery-last.pack.js"></script>
+		<script type="text/javascript" src="/resource/lib/jquery/jquery-extra.source.js"></script>
+	</head>
+	<body>
+		<h1>[SC]Auto play</h1>
+		<div class="main">
+			<div style="text-align:center;padding:10px">
+				<a id="All_play" href="javascript:void(0)">PLAY ALL</a>
+				<a id="All_pause" href="javascript:void(0)">PAUSE ALL</a>
+				<a id="All_stop" href="javascript:void(0)">STOP ALL</a>
+			</div>
+			<div style="text-align:center;padding:10px">
+				<div style="margin:0 auto" id="A" -sc-data="src=http://labor.codante.org/dev/demo/sprite_clips/images/door.png&size=160:120&dim=13:68&clips=883"></div>
+				<a id="A_play" href="javascript:void(0)">PLAY</a>
+				<a id="A_pause" href="javascript:void(0)">PAUSE</a>
+				<a id="A_stop" href="javascript:void(0)">STOP</a>
+			</div>
+			<div style="text-align:center;padding:10px">
+				<div style="margin:0 auto" id="B" -sc-data="src=http://labor.codante.org/dev/demo/sprite_clips/images/door.png&size=160:120&dim=13:68&clips=883"></div>
+				<a id="B_play" href="javascript:void(0)">PLAY</a>
+				<a id="B_pause" href="javascript:void(0)">PAUSE</a>
+				<a id="B_stop" href="javascript:void(0)">STOP</a>
+			</div>
+			<div style="text-align:center;padding:10px">
+				<div style="margin:0 auto" id="C" -sc-data="src=http://labor.codante.org/dev/demo/sprite_clips/images/door.png&size=160:120&dim=13:68&clips=883"></div>
+				<a id="C_play" href="javascript:void(0)">PLAY</a>
+				<a id="C_pause" href="javascript:void(0)">PAUSE</a>
+				<a id="C_stop" href="javascript:void(0)">STOP</a>
+			</div>
+		</div>
+		<script type="text/javascript" src="script/sClip.js"></script>
+		<script type="text/javascript">
+			var A = sClip($('#A').get(0), {'type' : 'image'});
+			$('#A_play').click(function(){
+				A.play(50);
+			});
+			$('#A_pause').click(function(){
+				A.pause();
+			});
+			$('#A_stop').click(function(){
+				A.stop();
+			});
+			
+			var B = sClip($('#B').get(0), {'type' : 'background'});
+			$('#B_play').click(function(){
+				B.play(50);
+			});
+			$('#B_pause').click(function(){
+				B.pause();
+			});
+			$('#B_stop').click(function(){
+				B.stop();
+			});
+			
+			var C = sClip($('#C').get(0), {'type' : 'canvas'});
+			$('#C_play').click(function(){
+				C.play(50);
+			});
+			$('#C_pause').click(function(){
+				C.pause();
+			});
+			$('#C_stop').click(function(){
+				C.stop();
+			});
+			
+			$('#All_play').click(function(){
+				A.play(50);
+				B.play(50);
+				C.play(50);
+			});
+			$('#All_pause').click(function(){
+				A.pause();
+				B.pause();
+				C.pause();
+			});
+			$('#All_stop').click(function(){
+				A.stop();
+				B.stop();
+				C.stop();
+			});
+		</script>
+	</body>
+</html>

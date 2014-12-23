@@ -1,0 +1,371 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+body{padding-left:75px;background-color:beige}
+</style>
+<script>
+///////////////////////////
+//base64编码的GIF图像解码
+//By Mozart0
+//2005/10/29
+////////////////////
+
+//建立GIF类的对象
+//类GIF在此函数内部定义
+//str64：gif文件的Base64编码字符串
+//成功返回创建的GIF对象
+//失败返回null
+function getGif(str64){
+    var bytes=decodeBase64(str64);
+    if(!bytes){
+        alert("错误：无效的Base64编码");
+        return null;
+        }
+    var gif=new GIF();
+    for(var i=0;i<6;i++)
+        gif.version+=String.fromCharCode(bytes[i]);
+    if(gif.version.slice(0,3)!="GIF"){
+        alert("错误：非Gif图像格式");
+        return null;
+        }
+    gif.width=bytes[i]|(bytes[i+1]<<8);
+    gif.height=bytes[i+2]|(bytes[i+3]<<8);
+    var f=bytes[i+4];
+    gif.colorResolution=(f>>4&0x7)+1;
+    gif.sorted=(f&0x8)?true:false;
+    gif.backgroundIndex=bytes[i+5];
+    gif.pixelAspectRadio=bytes[i+6];
+    if(f&0x80){
+        gif.globalPalette=[];
+        i+=getPalette(i+7,bytes,gif.globalPalette,2<<(f&0x7));
+        }
+    i+=7;
+    console.log(i, gif);
+    for(var j=i;j<bytes.length;j++)
+        if(bytes[j]==0x21&&bytes[j+1]==0xf9)
+            break;
+    if(j==bytes.length){
+        for(;i<bytes.length;i++)
+            if(bytes[i]==0x2c)
+                break;
+        if(i==bytes.length){
+            alert("错误：找不到图像数据");
+            return null;
+            }
+        var f=new GIF_Frame();
+        if(!getSingleFrame(i,f))
+            return null;
+        else
+            gif.frames.push(f);
+        }
+    else{
+        i=j;
+        do{
+            var f=new GIF_Frame();
+            var t=getSingleFrame(i,f);
+            if(!t)
+                return null;
+            gif.frames.push(f);
+            for(i+=t;i<bytes.length;i++)
+                if(bytes[i]==0x21&&bytes[i+1]==0xf9)
+                    break;
+            }
+        while(i<bytes.length);
+        }
+    return gif;
+   
+    //内部过程，生成色表
+    function getPalette(pos,s,d,len){
+        len*=3;
+        for(var i=pos;i<pos+len;i+=3)
+            d.push('#'+(s[i]<=0xf?"0":"")+s[i].toString(16)
+                +(s[i+1]<=0xf?"0":"")+s[i+1].toString(16)
+                +(s[i+2]<=0xf?"0":"")+s[i+2].toString(16));
+        return len;
+        }
+   
+    //内部过程，整合数据段
+    function getBlock(pos,s,d){
+        var p=pos;
+        while(len=s[p++]){
+            for(var i=0;i<len;i++)
+                d.push(s[p+i]);
+            p+=len;
+            }
+        return p-pos;
+        }
+   
+    //内部过程，获取一帧数据
+    function getSingleFrame(pos,frame){
+        var i=pos;
+        if(bytes[i]==0x21){
+            i+=3;
+            if(bytes[i]&1)
+                frame.transparentIndex=bytes[i+3];
+            frame.delay=bytes[i+1]|(bytes[i+2]<<8);
+            for(i+=5;i<bytes.length&&bytes[i]!=0x2c;i++);
+            if(i==bytes.length){
+                alert("错误:找不到图像标志符");
+                return 0;
+                }
+            }
+        frame.offsetX=bytes[i+1]|(bytes[i+2]<<8);
+        frame.offsetY=bytes[i+3]|(bytes[i+4]<<8);
+        frame.width=bytes[i+5]|(bytes[i+6]<<8);
+        frame.height=bytes[i+7]|(bytes[i+8]<<8);
+        var f=bytes[i+9];
+        i+=10;
+        if(f&0x40)
+            frame.interlace=true;
+        if(f&0x20)
+            frame.sorted=true;
+        if(f&0x80){
+            frame.colorResolution=(f&0x7)+1;
+            frame.localPalette=[];
+            i+=getPalette(i,bytes,frame.localPalette,1<<frame.colorResolution);
+            }
+        else{
+           frame.colorResolution=gif.colorResolution;
+           frame.localPalette=gif.globalPalette;
+           }
+        var lzwLen=bytes[i++]+1;
+        i+=getBlock(i,bytes,frame.data);
+        frame.data=decodeLzw(frame.data,lzwLen);
+        return frame.data?i-pos:0;
+        }
+   
+    //定义存储GIF文件的数据结构
+    //提供方法showInfo,返回图片信息
+    function GIF(){
+        this.version="";    //版本号
+        this.width=0;    //逻辑屏幕宽度
+        this.height=0;    //逻辑屏幕高度
+        this.colorResolution=0;    //颜色深度
+        this.sorted=false;    //全局色表分类标志
+        this.globalPalette=null;    //全局色表
+        this.backgroundIndex=-1;    //背景色索引
+        this.pixelAspectRadio=0;    //像素宽高比
+        this.frames=[];    //图像各帧，见GIF_Frame
+        this.showInfo=function(sep){    //显示图片信息,sep为行分隔符
+            if(!sep)
+                sep="\n";
+            var s="Gif infomation:"+sep+"-------------------";
+            s+=subInfo(this)+sep;
+            for(var i=0;i<this.frames.length;i++)
+                s+=sep+"frames "+i+"----------"+subInfo(this.frames[i]);
+            return s;
+            function subInfo(o){
+                var s="";
+                for(var i in o){
+                    if(i=="showInfo"||i=="draw")
+                        continue;
+                    s+=sep+i+":";
+                    if(typeof(o[i])=="object")
+                        s+=(o[i]?o[i].length:"null");
+                    else
+                        s+=o[i];
+                    }
+                return s;
+                }
+            }
+        }
+
+    //定义存储一帧图象的数据结构
+    //提供方法draw,绘图
+    function GIF_Frame(){
+        this.offsetX=0;        //X方向偏移量
+        this.offsetY=0;        //Y方向偏移量
+        this.width=0;        //图象宽度
+        this.height=0;        //图象高度
+        this.localPalette=null;    //局部色表
+        this.colorResolution=0;    //颜色深度
+        this.interlace=false;    //交错标志
+        this.sorted=false;    //局部色表分类标志
+        this.data=[];    //图像数据，存储各像素颜色的整数索引
+        this.transparentIndex=-1;    //透明色索引
+        this.delay=0;    //帧延时
+        this.draw=function(parent,zoom){
+            if(!this.data.length)
+                return;
+            if(!parent)
+                parent=document.body;
+            if(!zoom)
+                zoom=1;
+            if(parent.clientWidth<this.width*zoom)
+                parent.style.width=this.width*zoom;
+            if(parent.clientHeight<this.height*zoom)
+                parent.style.height=this.height*zoom;
+            var id="ImgDefaultDraw";
+            var img=document.getElementById(id);
+            if(img)
+                delete parent.removeChild(img);
+            img=document.createElement("DIV");
+            img.id=id;
+            parent.appendChild(img);
+            img.style.position="absolute";
+            var t=document.createElement("DIV");
+            t.style.overflow="hidden";
+            t.style.position="absolute";
+            defLayout(this.data,this.localPalette,this.width,this.height,img,t,zoom);
+            delete t;
+            }
+        }
+    }
+
+//Base64解码
+//strIn，输入字符串
+//成功返回一个数组，每一个元素包含一字节信息
+//失败返回null
+function decodeBase64(strIn){
+    if(!strIn.length||strIn.length%4)
+        return null;
+    var str64=
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+    var index64=[];
+    for(var i=0;i<str64.length;i++)
+        index64[str64.charAt(i)]=i;
+    var c0,c1,c2,c3,b0,b1,b2;
+    var len=strIn.length;
+    var len1=len;
+    if(strIn.charAt(len-1)=='=')
+        len1-=4;
+    var result=[];
+    for(var i=0,j=0;i<len1;i+=4){
+        c0=index64[strIn.charAt(i)];
+        c1=index64[strIn.charAt(i+1)];
+        c2=index64[strIn.charAt(i+2)];
+        c3=index64[strIn.charAt(i+3)];
+        b0=(c0<<2)|(c1>>4);
+        b1=(c1<<4)|(c2>>2);
+        b2=(c2<<6)|c3;
+        result.push(b0&0xff);
+        result.push(b1&0xff);
+        result.push(b2&0xff);
+        }
+    if(len1!=len){
+        c0=index64[strIn.charAt(i)];
+        c1=index64[strIn.charAt(i+1)];
+        c2=strIn.charAt(i+2);
+        b0=(c0<<2)|(c1>>4);
+        result.push(b0&0xff);
+        if(c2!='='){
+            c2=index64[c2];
+            b1=(c1<<4)|(c2>>2);
+            result.push(b1&0xff);
+            }
+        }
+    return result;
+    }
+
+//用于GIF的LZW解码函数
+//arrBytes为源数据,nBits为初始编码位数
+//成功返回数组，每个元素包括一个颜色索引
+//失败返回null
+function decodeLzw(arrBytes,nBits){
+    var cc=1<<(nBits-1);
+    var eoi=cc+1;
+    var table=[],mask=[],result=[];
+    for(var i=0;i<cc;i++)
+        table[i]=(i>>8&0xf).toString(16)
+            +(i>>4&0xf).toString(16)+(i&0xf).toString(16);
+    for(i=2,mask[1]=1;i<13;i++)
+        mask[i]=mask[i-1]<<1|1;
+    var bc=nBits;
+    var pos=0,temp=0,tleft=0,code=0,old=0;
+    while(true){
+        while(tleft<bc){
+            temp=temp|(arrBytes[pos++]<<tleft);
+            tleft+=8;
+            }
+        code=temp&mask[bc];
+        tleft-=bc;
+        temp>>=bc;
+        if(code==eoi)
+            break;
+        if(code==cc){
+            table.length=cc+2;
+            bc=nBits;
+            old=code;
+            continue;
+            }
+        var t="";
+        if(code<table.length){
+            t=table[code];
+            if(old!=cc)
+                table.push(table[old]+t.slice(0,3));
+            }
+        else if(old<table.length){
+            t=table[old]+table[old].slice(0,3);
+            table.push(t);
+            }
+        else{
+            alert("错误：图像数据无效");
+            return null;
+            }
+        old=code;
+        for(var i=0;i<t.length;i+=3)
+            result.push(parseInt(t.substr(i,3),16))
+        if(table.length==1<<bc&&bc<12)
+            bc++;
+        }
+    return result;
+    }
+
+//根据字节数组data布局，以最少的div完成绘图
+function defLayout(data,palette,width,height,image,block,zoom){
+    var map=new Array(height);
+    for(var i=0;i<height;i++){
+        map[i]=new Array(width);
+        for(var j=0;j<width;j++)
+            map[i][j]=data[i*width+j];
+        }
+    var i,j,i1,i2,j1,j2,c;
+    for(i=0;i<height;i++)
+        for(j=0;j<width;){
+            if(map[i][j]==0x100){
+                j++;
+                continue;
+                }
+            c=map[i][j];
+            for(i1=i+1;i1<height&&map[i1][j]==c;i1++);
+            for(j1=j+1;j1<width;j1++){
+                for(i2=i;i2<i1&&map[i2][j1]==c;i2++);
+                if(i2<i1)
+                    break;
+                }
+            for(i2=i;i2<i1;i2++)
+                for(j2=j;j2<j1;j2++)
+                    map[i2][j2]=0x100;
+            var x=block.cloneNode(true);
+            x.style.left=j*zoom;
+            x.style.top=i*zoom;
+            x.style.width=(j1-j)*zoom;
+            x.style.height=(i1-i)*zoom;
+            x.style.backgroundColor=palette[c];
+            image.appendChild(x);
+            j=j1;
+            }
+    }
+</SCRIPT>
+
+<script>
+function main(){
+ var t=new Date().getTime();
+ var xmldom=document.getElementById("imgData");
+ var gif=getGif("R0lGODlhAQAKAJEAAP///8xmAP4BAgAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQEBwD/ACwAAAAAAQAKAAACAwyOWAAh+QQFBwACACwAAAAAAQACAAACAkQKACH5BAUHAAIALAAAAQABAAIAAAICRAoAIfkEBQcAAgAsAAACAAEAAgAAAgJECgAh+QQFBwACACwAAAMAAQACAAACAkQKACH5BAUHAAIALAAABAABAAIAAAICRAoAIfkEBQcAAgAsAAAFAAEAAgAAAgJECgAh+QQFBwACACwAAAYAAQACAAACAkQKACH5BAUHAAIALAAABwABAAIAAAICRAoAIfkEBQcAAgAsAAAIAAEAAgAAAgJECgA7");
+ var info=document.getElementById("info");
+ info.innerHTML=gif.showInfo("<br>");
+ t=new Date().getTime();
+ gif.frames[0].draw(document.getElementById("canvas"),1);
+ info.innerHTML+="<br>绘图耗时"+(new Date().getTime()-t)+"ms";
+ }
+</SCRIPT>
+<body onload="main()">
+ <div id="canvas">1</div>
+ <hr>
+ <div id="info">页面载入中，请稍候...</div>
+</body>
+</html>

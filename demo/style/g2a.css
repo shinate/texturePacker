@@ -1,0 +1,95 @@
+html, body {
+	overflow: hidden;
+}
+div {
+	zoom: 1
+}
+
+/**
+ * workbench
+ */
+.g2a_workbench {
+	height: 100%;
+}
+
+/**
+ * upload
+ */
+#Co-Pagelet-G2A-Upload {
+}
+
+#Co-Pagelet-G2A-Upload .trigger_zone {
+	margin: 5px;
+	height: 80px;
+	font-size: 120%;
+	line-height: 32px;
+	font-weight: bold;
+	text-align: center;
+	position: relative;
+	padding-top: 10px;
+}
+
+#Co-Pagelet-G2A-Upload .trigger_zone .corner {
+	border-color: #ccc;
+	border-width: 5px;
+	height: 20px;
+	width: 20px;
+	position: absolute;
+}
+#Co-Pagelet-G2A-Upload .trigger_zone .corner_0 {
+	top: 0;
+	left: 0;
+	border-style: solid none none solid
+}
+#Co-Pagelet-G2A-Upload .trigger_zone .corner_1 {
+	top: 0;
+	right: 0;
+	border-style: solid solid none none
+}
+#Co-Pagelet-G2A-Upload .trigger_zone .corner_2 {
+	bottom: 0;
+	right: 0;
+	border-style: none solid solid none
+}
+#Co-Pagelet-G2A-Upload .trigger_zone .corner_3 {
+	bottom: 0;
+	left: 0;
+	border-style: none none solid solid
+}
+#Co-Pagelet-G2A-Upload .hover .corner {
+	border-color: #393
+}
+#Co-Pagelet-G2A-Upload .trigger_zone p {
+	margin: 0
+}
+#Co-Pagelet-G2A-Upload .trigger_zone .input_upload {
+	background: #393;
+	position: relative;
+	padding: 0 10px;
+	overflow: hidden;
+	font-size: 12px;
+	font-weight: normal;
+	display: inline-block;
+}
+#Co-Pagelet-G2A-Upload .trigger_zone .input_upload input {
+	cursor: pointer;
+	opacity: 0;
+	position: absolute;
+	right: 0;
+	top: 0;
+	height: 50px;
+	width: 200px;
+	font-size: 500%;
+}
+
+#Co-Pagelet-G2A-Preview {
+}
+#Co-Pagelet-G2A-Preview .tabs {
+	list-style: none inside none;
+	margin: 0;
+	padding: 0;
+}
+#Co-Pagelet-G2A-Preview .tabs .tab {
+	display: inline-block;
+}
+
