@@ -91,7 +91,15 @@
 				<div class="Co-frame-column-resize" --column-position="$"></div>
 			</div>
 		</div>
-		<script type="text/javascript" src="http://js.static.codante.org/package/pagelet/frame/column/index.js"></script>
-		<script type="text/javascript" src="http://js.static.codante.org/package/pagelet/gif2anim/index.js"></script>
+		<script type="text/javascript" src="../build/lib/Require.js"></script>
+		<script type="text/javascript">
+			require.config({
+				path : '../build/'
+			});
+		</script>
+		<script type="text/javascript">
+			require('pagelet/frame/column/index');
+			require('pagelet/gif2anim/index');
+		</script>
 	</body>
 </html>
